@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -32,6 +32,8 @@ export default function MathSessionPage({ params }: Props) {
   const [sessionXP, setSessionXP] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [showExit, setShowExit] = useState(false);
+  const checkpointKey = `ck_math_${profileId}_${missionId}`;
+  const restored = useRef(false);
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -42,6 +44,35 @@ export default function MathSessionPage({ params }: Props) {
     setMission(found);
     setIsReady(true);
   }, [profileId, missionId, activeStudent, router]);
+
+  // Restore checkpoint once mission is ready
+  useEffect(() => {
+    if (!isReady || !mission || restored.current) return;
+    restored.current = true;
+    try {
+      const saved = localStorage.getItem(checkpointKey);
+      if (saved) {
+        const { idx, res } = JSON.parse(saved);
+        if (typeof idx === "number" && idx > 0 && idx < mission.problems.length && Array.isArray(res)) {
+          setProblemIdx(idx);
+          setResults(res);
+        }
+      }
+    } catch {}
+  }, [isReady, mission, checkpointKey]);
+
+  // Save checkpoint on each problem advance
+  useEffect(() => {
+    if (!isReady || phase !== "playing") return;
+    try {
+      localStorage.setItem(checkpointKey, JSON.stringify({ idx: problemIdx, res: results }));
+    } catch {}
+  }, [problemIdx, results, phase, isReady, checkpointKey]);
+
+  // Clear checkpoint on completion
+  useEffect(() => {
+    if (phase === "complete") localStorage.removeItem(checkpointKey);
+  }, [phase, checkpointKey]);
 
   const handleProblemResult = useCallback(
     async (correct: boolean, attempts: number) => {
@@ -64,10 +95,12 @@ export default function MathSessionPage({ params }: Props) {
   );
 
   const handlePlayAgain = useCallback(() => {
+    localStorage.removeItem(checkpointKey);
+    restored.current = false;
     setProblemIdx(0);
     setResults([]);
     setPhase("playing");
-  }, []);
+  }, [checkpointKey]);
 
   if (!isReady || !mission) return <FullPageLoader label="Loading Math Mission..." />;
 
@@ -182,7 +215,7 @@ export default function MathSessionPage({ params }: Props) {
             >
               <div className="text-4xl mb-3">🧮</div>
               <h2 className="text-lg font-bold text-white mb-2">Leave this mission?</h2>
-              <p className="text-sm text-gray-400 mb-5">Your progress won&apos;t be saved for this mission.</p>
+              <p className="text-sm text-gray-400 mb-5">Your progress is saved — you can pick up right where you left off!</p>
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => router.push(`/student/${profileId}/math`)}

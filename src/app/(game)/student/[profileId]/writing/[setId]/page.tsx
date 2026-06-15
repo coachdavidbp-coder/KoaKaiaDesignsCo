@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -42,6 +42,8 @@ export default function WritingSessionPage({ params }: Props) {
   const [sessionXP, setSessionXP] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [showExit, setShowExit] = useState(false);
+  const checkpointKey = `ck_write_${profileId}_${setId}`;
+  const restored = useRef(false);
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -50,8 +52,36 @@ export default function WritingSessionPage({ params }: Props) {
     const found = getWritingSetById(setId);
     if (!found) { router.push(`/student/${profileId}/writing`); return; }
     setWritingSet(found);
-    loadWritingProgress().then(() => setIsReady(true));
-  }, [profileId, setId, activeStudent, router, loadWritingProgress]);
+    loadWritingProgress().then((p) => {
+      setIsReady(true);
+      // Restore checkpoint after load
+      if (restored.current) return;
+      restored.current = true;
+      try {
+        const saved = localStorage.getItem(checkpointKey);
+        if (saved) {
+          const { idx, res } = JSON.parse(saved);
+          if (typeof idx === "number" && idx > 0 && Array.isArray(res)) {
+            setActivityIdx(idx);
+            setResults(res);
+          }
+        }
+      } catch {}
+    });
+  }, [profileId, setId, activeStudent, router, loadWritingProgress, checkpointKey]);
+
+  // Save checkpoint on activity advance
+  useEffect(() => {
+    if (!isReady || phase !== "playing") return;
+    try {
+      localStorage.setItem(checkpointKey, JSON.stringify({ idx: activityIdx, res: results }));
+    } catch {}
+  }, [activityIdx, results, phase, isReady, checkpointKey]);
+
+  // Clear checkpoint on completion
+  useEffect(() => {
+    if (phase === "complete") localStorage.removeItem(checkpointKey);
+  }, [phase, checkpointKey]);
 
   const handleActivityResult = useCallback(
     async (correct: boolean, attempts: number) => {
@@ -97,10 +127,12 @@ export default function WritingSessionPage({ params }: Props) {
   );
 
   const handlePlayAgain = useCallback(() => {
+    localStorage.removeItem(checkpointKey);
+    restored.current = false;
     setPhase("playing");
     setActivityIdx(0);
     setResults([]);
-  }, []);
+  }, [checkpointKey]);
 
   if (!isReady || !writingSet) return <FullPageLoader label="Opening activity..." />;
 

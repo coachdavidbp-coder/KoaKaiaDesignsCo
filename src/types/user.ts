@@ -29,6 +29,7 @@ export interface StudentProfile {
     character: AvatarCharacter;
     color: AvatarColor;
   };
+  avatarUrl?: string;
   pin: string;
   createdAt: string;
   updatedAt: string;

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Camera } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useAchievements } from "@/hooks/useAchievements";
 import { getStudentProgress } from "@/lib/firebase/firestore";
+import { uploadStudentPhoto } from "@/lib/firebase/storage";
 import { COMPANIONS } from "@/types/companion";
 import { ALL_ACHIEVEMENTS, RARITY_COLORS } from "@/types/achievements";
 import { GameNav } from "@/components/game/GameNav";
@@ -55,6 +57,9 @@ export default function CharacterPage({ params }: Props) {
   const [progress, setLocalProgress] = useState<StudentProgress | null>(
     progressMap[profileId] ?? null
   );
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { updateStudent } = useStudentStore();
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -68,6 +73,21 @@ export default function CharacterPage({ params }: Props) {
       loadAchievements(),
     ]);
   }, [profileId, activeStudent, router, setProgress, loadAchievements]);
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !activeStudent) return;
+    setUploading(true);
+    try {
+      const url = await uploadStudentPhoto(activeStudent.id, file);
+      updateStudent(activeStudent.id, { avatarUrl: url });
+    } catch {
+      // upload failed silently
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   if (!activeStudent) return null;
   const companion = COMPANIONS[activeStudent.avatar.character];
@@ -103,11 +123,31 @@ export default function CharacterPage({ params }: Props) {
                 <Avatar
                   character={activeStudent.avatar.character}
                   color={activeStudent.avatar.color}
+                  avatarUrl={activeStudent.avatarUrl}
                   size="xl"
                 />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-gray-700 border-2 border-gray-900 flex items-center justify-center hover:bg-gray-600 transition-all active:scale-95 disabled:opacity-50"
+                  title="Change photo"
+                >
+                  {uploading ? (
+                    <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Camera className="w-3 h-3 text-white" />
+                  )}
+                </button>
                 <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center">
                   <span className="text-xs font-bold text-white">{explorerLevel}</span>
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoSelect}
+                />
               </div>
 
               <div className="flex-1">

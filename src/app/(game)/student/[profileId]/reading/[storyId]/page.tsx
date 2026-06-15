@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -55,6 +55,9 @@ export default function StoryReaderPage({ params }: Props) {
   const [completionData, setCompletionData] = useState<CompletionData | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [savedPage, setSavedPage] = useState<number | null>(null);
+  const checkpointKey = `ck_reading_${profileId}_${storyId}`;
+  const checkpointLoaded = useRef(false);
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -82,12 +85,47 @@ export default function StoryReaderPage({ params }: Props) {
     return () => narration.stop();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load checkpoint once story is ready
+  useEffect(() => {
+    if (!isReady || !story || checkpointLoaded.current) return;
+    checkpointLoaded.current = true;
+    try {
+      const saved = localStorage.getItem(checkpointKey);
+      if (saved) {
+        const page = parseInt(saved, 10);
+        if (!isNaN(page) && page > 0 && page < story.pages.length) {
+          setSavedPage(page);
+        }
+      }
+    } catch {}
+  }, [isReady, story, checkpointKey]);
+
+  // Save page progress while reading
+  useEffect(() => {
+    if (phase !== "reading") return;
+    try { localStorage.setItem(checkpointKey, String(activePage)); } catch {}
+  }, [activePage, phase, checkpointKey]);
+
+  // Clear checkpoint when story is completed
+  useEffect(() => {
+    if (phase === "complete") localStorage.removeItem(checkpointKey);
+  }, [phase, checkpointKey]);
+
   const handleStartReading = useCallback(async () => {
     if (!story) return;
+    localStorage.removeItem(checkpointKey);
+    setSavedPage(null);
     setPhase("reading");
     setPage(0);
     await beginStory(story.id);
-  }, [story, beginStory, setPage]);
+  }, [story, beginStory, setPage, checkpointKey]);
+
+  const handleResumeReading = useCallback(async () => {
+    if (!story || savedPage === null) return;
+    setPhase("reading");
+    setPage(savedPage);
+    await beginStory(story.id);
+  }, [story, savedPage, beginStory, setPage]);
 
   const handleNextPage = useCallback(() => {
     if (!story) return;
@@ -172,10 +210,13 @@ export default function StoryReaderPage({ params }: Props) {
   const handleReadAgain = useCallback(() => {
     narration.stop();
     clearSession();
+    localStorage.removeItem(checkpointKey);
+    setSavedPage(null);
+    checkpointLoaded.current = false;
     setPage(0);
     setPhase("cover");
     setCompletionData(null);
-  }, [narration, clearSession, setPage]);
+  }, [narration, clearSession, setPage, checkpointKey]);
 
   if (!isReady || !story) return <FullPageLoader label="Opening story..." />;
 
@@ -316,16 +357,33 @@ export default function StoryReaderPage({ params }: Props) {
                   </div>
                 )}
 
-                <motion.button
-                  onClick={handleStartReading}
-                  className="px-8 py-4 rounded-2xl font-bold text-lg text-black shadow-lg transition-all active:scale-95"
-                  style={{
-                    background: `linear-gradient(135deg, ${story.theme.primary}, ${story.theme.secondary})`,
-                  }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  Start Reading! 📖
-                </motion.button>
+                {savedPage !== null ? (
+                  <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
+                    <motion.button
+                      onClick={handleResumeReading}
+                      className="px-8 py-4 rounded-2xl font-bold text-lg text-black shadow-lg transition-all active:scale-95"
+                      style={{ background: `linear-gradient(135deg, ${story.theme.primary}, ${story.theme.secondary})` }}
+                      whileTap={{ scale: 0.96 }}
+                    >
+                      Resume — Page {savedPage + 1} 📖
+                    </motion.button>
+                    <button
+                      onClick={handleStartReading}
+                      className="px-6 py-3 rounded-2xl font-medium text-sm text-gray-400 hover:text-white bg-white/5 border border-white/10 transition-all active:scale-95"
+                    >
+                      Start over from the beginning
+                    </button>
+                  </div>
+                ) : (
+                  <motion.button
+                    onClick={handleStartReading}
+                    className="px-8 py-4 rounded-2xl font-bold text-lg text-black shadow-lg transition-all active:scale-95"
+                    style={{ background: `linear-gradient(135deg, ${story.theme.primary}, ${story.theme.secondary})` }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    Start Reading! 📖
+                  </motion.button>
+                )}
               </motion.div>
             </motion.div>
           )}
@@ -471,7 +529,7 @@ export default function StoryReaderPage({ params }: Props) {
               <div className="text-4xl mb-3">📖</div>
               <h2 className="text-lg font-bold text-white mb-2">Leave this story?</h2>
               <p className="text-sm text-gray-400 mb-5">
-                Your progress on this page won&apos;t be saved. You can start over later!
+                Your progress is saved! Come back and tap &quot;Resume&quot; to pick up where you left off.
               </p>
               <div className="flex flex-col gap-2">
                 <button
