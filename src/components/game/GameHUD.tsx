@@ -25,7 +25,7 @@ export function GameHUD({ student, progress }: GameHUDProps) {
     <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-5xl mx-auto px-4 py-3">
         <div className="flex items-center gap-3">
-          <Avatar character={student.avatar.character} color={student.avatar.color} size="sm" />
+          <Avatar character={student.avatar.character} color={student.avatar.color} size="sm" avatarUrl={student.avatarUrl} />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">

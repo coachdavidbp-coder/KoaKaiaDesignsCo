@@ -117,7 +117,7 @@ export function GraduationCelebration({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" />
+          <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" avatarUrl={student.avatarUrl} />
           <div>
             <p className="font-bold text-white text-lg">{student.displayName}</p>
             <p className="text-sm text-gray-400">Knowledge Restored!</p>
