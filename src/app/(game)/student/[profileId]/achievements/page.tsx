@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
@@ -25,11 +25,11 @@ const CATEGORIES: { id: AchievementCategory | "all"; label: string; emoji: strin
 ];
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 export default function AchievementsPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { earned, earnedIds, earnedCount, loadAchievements } = useAchievements(profileId);

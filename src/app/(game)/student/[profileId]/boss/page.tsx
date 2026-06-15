@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, RotateCcw } from "lucide-react";
@@ -17,13 +17,13 @@ import { GraduationCelebration } from "@/components/boss/GraduationCelebration";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 type BossPhase = "intro" | "battle" | "victory" | "defeat";
 
 export default function BossPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { updateProgress } = useProgressStore();

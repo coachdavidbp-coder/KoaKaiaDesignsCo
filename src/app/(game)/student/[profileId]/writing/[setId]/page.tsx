@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -25,11 +25,11 @@ import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 type SessionPhase = "playing" | "complete";
 
 interface Props {
-  params: Promise<{ profileId: string; setId: string }>;
+  params: { profileId: string; setId: string };
 }
 
 export default function WritingSessionPage({ params }: Props) {
-  const { profileId, setId } = use(params);
+  const { profileId, setId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { writingProgress, loadWritingProgress, finishSet, submitStory } = useWriting(profileId);

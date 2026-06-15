@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Zap, Flame, Clock } from "lucide-react";
@@ -20,7 +20,7 @@ import { formatRelativeTime } from "@/lib/utils/format";
 import Link from "next/link";
 
 interface Props {
-  params: Promise<{ studentId: string }>;
+  params: { studentId: string };
 }
 
 type Tab = "overview" | "skills" | "stories" | "report";
@@ -55,7 +55,7 @@ const SUBJECTS = [
 ];
 
 export default function StudentReportPage({ params }: Props) {
-  const { studentId } = use(params);
+  const { studentId } = params;
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [student, setStudent] = useState<StudentProfile | null>(null);

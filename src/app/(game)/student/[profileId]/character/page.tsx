@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useStudentStore } from "@/store/studentStore";
@@ -18,7 +18,7 @@ import { formatRelativeTime } from "@/lib/utils/format";
 import { StudentProgress } from "@/types/progress";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 const XP_PER_LEVEL = 500;
@@ -47,7 +47,7 @@ function getRank(level: number) {
 }
 
 export default function CharacterPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { progressMap, setProgress } = useProgressStore();

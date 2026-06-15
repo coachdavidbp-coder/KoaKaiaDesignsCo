@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -15,11 +15,11 @@ import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 type SessionPhase = "playing" | "complete";
 
 interface Props {
-  params: Promise<{ profileId: string; missionId: string }>;
+  params: { profileId: string; missionId: string };
 }
 
 export default function MathSessionPage({ params }: Props) {
-  const { profileId, missionId } = use(params);
+  const { profileId, missionId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { finishMission } = useMath(profileId);
