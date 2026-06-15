@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, title, children, size = "md", className
           />
           <motion.div
             className={cn(
-              "relative w-full bg-gray-900 border border-white/10 rounded-3xl shadow-card overflow-hidden",
+              "relative w-full bg-gray-900 border border-white/10 rounded-3xl shadow-card overflow-y-auto max-h-[90vh]",
               sizeStyles[size],
               className
             )}
