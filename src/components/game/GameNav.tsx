@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, User, Trophy, ShoppingBag } from "lucide-react";
+import { Map, User, Trophy, ShoppingBag, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface GameNavProps {
@@ -15,6 +15,7 @@ export function GameNav({ profileId, achievementCount = 0 }: GameNavProps) {
 
   const items = [
     { href: `/student/${profileId}`, label: "Map", icon: Map },
+    { href: `/student/${profileId}/reading`, label: "Read", icon: BookOpen },
     { href: `/student/${profileId}/character`, label: "Character", icon: User },
     { href: `/student/${profileId}/achievements`, label: "Badges", icon: Trophy },
     { href: `/student/${profileId}/shop`, label: "Shop", icon: ShoppingBag },
@@ -24,7 +25,10 @@ export function GameNav({ profileId, achievementCount = 0 }: GameNavProps) {
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-xl border-t border-white/10 safe-bottom">
       <div className="max-w-5xl mx-auto flex">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const active =
+            href === `/student/${profileId}`
+              ? pathname === href
+              : pathname.startsWith(href);
           return (
             <Link
               key={href}
