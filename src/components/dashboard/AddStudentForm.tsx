@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { User, Hash } from "lucide-react";
+import { User, Hash, Camera } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils/cn";
 import { AvatarCharacter, AvatarColor } from "@/types/user";
+import { resizeToDataUrl } from "@/lib/utils/imageResize";
 
 const schema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters").max(20, "Name too long"),
@@ -35,7 +36,7 @@ const COLOR_SWATCHES: Record<AvatarColor, string> = {
 };
 
 interface AddStudentFormProps {
-  onSubmit: (name: string, character: AvatarCharacter, color: AvatarColor, pin: string) => Promise<void>;
+  onSubmit: (name: string, character: AvatarCharacter, color: AvatarColor, pin: string, avatarUrl?: string) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -43,6 +44,9 @@ export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
   const [selectedChar, setSelectedChar] = useState<AvatarCharacter>("koa");
   const [selectedColor, setSelectedColor] = useState<AvatarColor>("blue");
   const [isLoading, setIsLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -50,10 +54,24 @@ export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoLoading(true);
+    try {
+      const dataUrl = await resizeToDataUrl(file, 300, 0.8);
+      setPhotoUrl(dataUrl);
+    } catch {
+      // silently ignore
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
   const handleFormSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      await onSubmit(data.displayName, selectedChar, selectedColor, data.pin);
+      await onSubmit(data.displayName, selectedChar, selectedColor, data.pin, photoUrl);
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +79,34 @@ export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
-      <div className="flex justify-center">
-        <Avatar character={selectedChar} color={selectedColor} size="xl" />
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="w-24 h-24 rounded-full overflow-hidden cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="preview" className="w-full h-full object-cover" />
+          ) : (
+            <Avatar character={selectedChar} color={selectedColor} size="xl" />
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={photoLoading}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 text-sm transition-all disabled:opacity-50"
+        >
+          <Camera className="w-4 h-4" />
+          {photoLoading ? "Loading..." : photoUrl ? "Change Photo" : "Add Photo"}
+        </button>
       </div>
 
       <div>
