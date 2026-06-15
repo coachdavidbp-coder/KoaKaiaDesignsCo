@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Zap, Flame, Clock } from "lucide-react";
@@ -20,7 +20,7 @@ import { formatRelativeTime } from "@/lib/utils/format";
 import Link from "next/link";
 
 interface Props {
-  params: Promise<{ studentId: string }>;
+  params: { studentId: string };
 }
 
 type Tab = "overview" | "skills" | "stories" | "report";
@@ -55,7 +55,7 @@ const SUBJECTS = [
 ];
 
 export default function StudentReportPage({ params }: Props) {
-  const { studentId } = use(params);
+  const { studentId } = params;
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [student, setStudent] = useState<StudentProfile | null>(null);
@@ -111,7 +111,7 @@ export default function StudentReportPage({ params }: Props) {
         <Card variant="glow" className="p-5">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" />
+              <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" avatarUrl={student.avatarUrl} />
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center">
                 <span className="text-xs font-bold text-white">{explorerLevel}</span>
               </div>
