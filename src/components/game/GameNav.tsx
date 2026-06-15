@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, User, Trophy, BookOpen, PenLine } from "lucide-react";
+import { Map, User, Trophy, BookOpen, PenLine, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface GameNavProps {
@@ -16,7 +16,8 @@ export function GameNav({ profileId, achievementCount = 0 }: GameNavProps) {
   const items = [
     { href: `/student/${profileId}`, label: "Map", icon: Map },
     { href: `/student/${profileId}/reading`,  label: "Read",    icon: BookOpen },
-    { href: `/student/${profileId}/spelling`, label: "Spelling", icon: PenLine },
+    { href: `/student/${profileId}/spelling`, label: "Spell",   icon: PenLine },
+    { href: `/student/${profileId}/writing`,  label: "Write",   icon: Pencil },
     { href: `/student/${profileId}/character`, label: "Me",     icon: User },
     { href: `/student/${profileId}/achievements`, label: "Badges", icon: Trophy },
   ];
