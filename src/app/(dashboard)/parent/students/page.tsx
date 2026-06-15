@@ -56,8 +56,8 @@ export default function StudentSelectPage() {
     }
   };
 
-  const handleCreate = async (name: string, char: AvatarCharacter, color: AvatarColor, pin: string) => {
-    const s = await createStudent(name, char, color, pin);
+  const handleCreate = async (name: string, char: AvatarCharacter, color: AvatarColor, pin: string, avatarUrl?: string) => {
+    const s = await createStudent(name, char, color, pin, avatarUrl);
     if (s) setAddOpen(false);
   };
 

@@ -34,12 +34,13 @@ export function useStudents(parentUid?: string) {
       displayName: string,
       avatarCharacter: AvatarCharacter,
       avatarColor: AvatarColor,
-      pin: string
+      pin: string,
+      avatarUrl?: string
     ) => {
       if (!parentUid) return null;
       setLoading(true);
       try {
-        const profile = await createStudentProfile(parentUid, displayName, avatarCharacter, avatarColor, pin);
+        const profile = await createStudentProfile(parentUid, displayName, avatarCharacter, avatarColor, pin, avatarUrl);
         addStudent(profile);
         toast.success(`${displayName}'s profile created!`);
         return profile;

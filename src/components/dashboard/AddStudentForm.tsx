@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { motion } from "framer-motion";
-import { User, Hash } from "lucide-react";
+import { Camera, User, Hash } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
@@ -35,14 +34,43 @@ const COLOR_SWATCHES: Record<AvatarColor, string> = {
 };
 
 interface AddStudentFormProps {
-  onSubmit: (name: string, character: AvatarCharacter, color: AvatarColor, pin: string) => Promise<void>;
+  onSubmit: (name: string, character: AvatarCharacter, color: AvatarColor, pin: string, avatarUrl?: string) => Promise<void>;
   onCancel: () => void;
+}
+
+function resizeToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      const max = 300;
+      if (width > height) {
+        if (width > max) { height = Math.round((height * max) / width); width = max; }
+      } else {
+        if (height > max) { width = Math.round((width * max) / height); height = max; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("canvas unavailable")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("load failed")); };
+    img.src = objectUrl;
+  });
 }
 
 export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
   const [selectedChar, setSelectedChar] = useState<AvatarCharacter>("koa");
   const [selectedColor, setSelectedColor] = useState<AvatarColor>("blue");
   const [isLoading, setIsLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -50,10 +78,24 @@ export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoLoading(true);
+    try {
+      const url = await resizeToDataUrl(file);
+      setPhotoUrl(url);
+    } catch {}
+    finally {
+      setPhotoLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   const handleFormSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      await onSubmit(data.displayName, selectedChar, selectedColor, data.pin);
+      await onSubmit(data.displayName, selectedChar, selectedColor, data.pin, photoUrl);
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +103,35 @@ export function AddStudentForm({ onSubmit, onCancel }: AddStudentFormProps) {
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
-      <div className="flex justify-center">
-        <Avatar character={selectedChar} color={selectedColor} size="xl" />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoSelect}
+      />
+
+      {/* Avatar preview + photo upload */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="relative">
+          {photoUrl ? (
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500/50 shadow-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <Avatar character={selectedChar} color={selectedColor} size="xl" />
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={photoLoading}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-300 text-sm font-semibold hover:bg-blue-600/30 transition-all active:scale-95 disabled:opacity-50"
+        >
+          <Camera className="w-4 h-4" />
+          {photoLoading ? "Processing…" : photoUrl ? "Change Photo" : "📷 Add Photo"}
+        </button>
       </div>
 
       <div>

@@ -55,9 +55,10 @@ export default function ParentDashboardPage() {
     name: string,
     character: AvatarCharacter,
     color: AvatarColor,
-    pin: string
+    pin: string,
+    avatarUrl?: string
   ) => {
-    const student = await createStudent(name, character, color, pin);
+    const student = await createStudent(name, character, color, pin, avatarUrl);
     if (student) setAddOpen(false);
   };
 

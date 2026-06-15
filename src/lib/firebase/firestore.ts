@@ -25,7 +25,8 @@ export async function createStudentProfile(
   displayName: string,
   avatarCharacter: AvatarCharacter,
   avatarColor: AvatarColor,
-  pin: string
+  pin: string,
+  avatarUrl?: string
 ): Promise<StudentProfile> {
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -36,6 +37,7 @@ export async function createStudentProfile(
     displayName,
     gradeLevel: 1,
     avatar: { character: avatarCharacter, color: avatarColor },
+    ...(avatarUrl ? { avatarUrl } : {}),
     pin,
     createdAt: now,
     updatedAt: now,
