@@ -180,13 +180,44 @@ export default function StudentGamePage({ params }: Props) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="p-5 text-center border-purple-500/20 bg-purple-500/5">
-            <div className="text-4xl mb-2 animate-float inline-block">🌫️</div>
-            <p className="font-bold text-white text-sm">The Forgetful Fog Awaits...</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Complete all 15 worlds to challenge The Forgetful Fog and restore knowledge to Adventure Island!
-            </p>
-          </Card>
+          {(() => {
+            const subjectSum = (progress?.readingPercent ?? 0) + (progress?.spellingPercent ?? 0) + (progress?.mathPercent ?? 0) + (progress?.writingPercent ?? 0);
+            const bossUnlocked = subjectSum >= 40;
+
+            return bossUnlocked ? (
+              <button
+                onClick={() => router.push(`/student/${profileId}/boss`)}
+                className="w-full p-5 rounded-3xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/15 hover:border-purple-500/60 hover:-translate-y-0.5 transition-all active:scale-[0.98] text-center"
+              >
+                <motion.div
+                  className="text-4xl mb-2 inline-block"
+                  animate={{ scale: [1, 1.1, 1], rotate: [0, -5, 5, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                >
+                  🌫️
+                </motion.div>
+                <p className="font-bold text-white text-sm">Challenge The Forgetful Fog!</p>
+                <p className="text-xs text-purple-300 mt-1">
+                  ⚔️ You&apos;re ready — tap to battle!
+                </p>
+              </button>
+            ) : (
+              <Card className="p-5 text-center border-purple-500/20 bg-purple-500/5">
+                <div className="text-4xl mb-2 animate-float inline-block">🌫️</div>
+                <p className="font-bold text-white text-sm">The Forgetful Fog Awaits...</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Keep learning — when your skills are strong enough, the Final Battle will unlock!
+                </p>
+                <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (subjectSum / 40) * 100)}%`, background: "linear-gradient(90deg, #7C3AED, #A855F7)" }}
+                  />
+                </div>
+                <p className="text-xs text-purple-500 mt-1">{Math.round(Math.min(100, (subjectSum / 40) * 100))}% ready</p>
+              </Card>
+            );
+          })()}
         </motion.div>
       </div>
 
