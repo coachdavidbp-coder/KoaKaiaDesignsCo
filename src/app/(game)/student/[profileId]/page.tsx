@@ -29,8 +29,8 @@ interface Props {
 export default function StudentGamePage({ params }: Props) {
   const { profileId } = use(params);
   const router = useRouter();
-  const { activeStudent, setActiveStudent } = useStudentStore();
-  const { setProgress } = useProgressStore();
+  const { activeStudent } = useStudentStore();
+  const setProgress = useProgressStore((s) => s.setProgress);
   const { earnedCount, loadAchievements, tryUnlock } = useAchievements(profileId);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [progress, setLocalProgress] = useState<StudentProgress | null>(null);

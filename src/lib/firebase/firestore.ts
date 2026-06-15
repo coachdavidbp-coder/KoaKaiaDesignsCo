@@ -153,8 +153,13 @@ export async function getStudentProgress(studentId: string): Promise<StudentProg
   const snap = await getDoc(doc(db, "progress", studentId));
   if (!snap.exists()) return null;
   const data = snap.data();
+  const levels = (data.levels ?? []).map((l: LevelProgress) => ({
+    ...l,
+    completedAt: l.completedAt ? toIso(l.completedAt as unknown) : null,
+  }));
   return {
     ...data,
+    levels,
     updatedAt: toIso(data.updatedAt),
     lastPlayedAt: data.lastPlayedAt ? toIso(data.lastPlayedAt) : null,
   } as StudentProgress;

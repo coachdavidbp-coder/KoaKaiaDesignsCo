@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Star, ChevronRight } from "lucide-react";
 import { GAME_LEVELS } from "@/types/game";
@@ -138,6 +138,16 @@ export function WorldMap({ progress }: WorldMapProps) {
   );
 }
 
+const STARS = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  size: ((i * 7 + 3) % 3 === 0) ? "2px" : "1px",
+  left: `${(i * 53 + 11) % 100}%`,
+  top: `${(i * 37 + 7) % 60}%`,
+  opacity: 0.2 + ((i * 13) % 40) / 100,
+  animationDelay: `${(i * 17) % 30 / 10}s`,
+  animationDuration: `${1.5 + (i * 11) % 20 / 10}s`,
+}));
+
 function MapBackground() {
   return (
     <>
@@ -156,18 +166,18 @@ function MapBackground() {
       <div className="absolute bottom-0 left-0 right-0 h-1/4 opacity-15"
         style={{ background: "linear-gradient(to top, rgba(14,165,233,0.4), transparent)" }}
       />
-      {[...Array(20)].map((_, i) => (
+      {STARS.map((star) => (
         <div
-          key={i}
+          key={star.id}
           className="absolute rounded-full bg-white animate-star-twinkle"
           style={{
-            width: Math.random() > 0.7 ? "2px" : "1px",
-            height: Math.random() > 0.7 ? "2px" : "1px",
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 60}%`,
-            opacity: 0.2 + Math.random() * 0.4,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${1.5 + Math.random() * 2}s`,
+            width: star.size,
+            height: star.size,
+            left: star.left,
+            top: star.top,
+            opacity: star.opacity,
+            animationDelay: star.animationDelay,
+            animationDuration: star.animationDuration,
           }}
         />
       ))}

@@ -95,7 +95,7 @@ export function useAdaptive(profileId: string, progress: StudentProgress | null)
         (progress.readingPercent + progress.spellingPercent + progress.mathPercent + progress.writingPercent) / 4
       );
       updateProgress(profileId, { streak, lastPlayedAt: new Date().toISOString(), overallPercent });
-    });
+    }).catch(() => {});
 
     // Level unlock check
     checkAndUnlockLevels(profileId, progress).then((newly) => {
@@ -106,7 +106,7 @@ export function useAdaptive(profileId: string, progress: StudentProgress | null)
         );
         updateProgress(profileId, { levels: updatedLevels });
       }
-    });
+    }).catch(() => {});
   }, [profileId, progress, updateProgress]);
 
   const recommendation = progress ? computeRecommendation(progress, profileId) : null;
