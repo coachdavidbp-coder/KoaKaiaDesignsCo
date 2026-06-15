@@ -36,6 +36,7 @@ const PATH_CONNECTIONS = [
 
 interface WorldMapProps {
   progress: StudentProgress | null;
+  profileId: string;
 }
 
 function getNodeStatus(
@@ -49,7 +50,7 @@ function getNodeStatus(
   return "locked";
 }
 
-export function WorldMap({ progress }: WorldMapProps) {
+export function WorldMap({ progress, profileId }: WorldMapProps) {
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
 
   const handleNodeClick = useCallback((levelId: number) => {
@@ -130,6 +131,7 @@ export function WorldMap({ progress }: WorldMapProps) {
           <LevelModal
             level={selectedLevelData}
             levelProgress={selectedLevelProgress ?? null}
+            profileId={profileId}
             onClose={() => setSelectedLevel(null)}
           />
         )}

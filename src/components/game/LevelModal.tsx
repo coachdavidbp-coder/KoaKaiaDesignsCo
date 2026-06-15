@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Lock, Star, Zap, Clock, Trophy } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, Lock } from "lucide-react";
 import { Level } from "@/types/game";
 import { LevelProgress } from "@/types/progress";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -10,10 +11,20 @@ import { Badge } from "@/components/ui/Badge";
 interface LevelModalProps {
   level: Level;
   levelProgress: LevelProgress | null;
+  profileId: string;
   onClose: () => void;
 }
 
-export function LevelModal({ level, levelProgress, onClose }: LevelModalProps) {
+function getSubjectRoute(level: Level, profileId: string): string {
+  const areas = level.focusAreas.map((a) => a.toLowerCase());
+  if (areas.some((a) => /spelling|word famil|scramble/.test(a))) return `/student/${profileId}/spelling`;
+  if (areas.some((a) => /writing|grammar|sentence|punctuation/.test(a))) return `/student/${profileId}/writing`;
+  if (areas.some((a) => /math|number|addition|subtraction|problem|pattern|place value|time/.test(a))) return `/student/${profileId}/math`;
+  return `/student/${profileId}/reading`;
+}
+
+export function LevelModal({ level, levelProgress, profileId, onClose }: LevelModalProps) {
+  const router = useRouter();
   const isLocked = !levelProgress?.isUnlocked && level.id !== 1;
   const isCompleted = levelProgress?.isCompleted ?? false;
   const pct = levelProgress?.completionPercent ?? 0;
@@ -135,25 +146,18 @@ export function LevelModal({ level, levelProgress, onClose }: LevelModalProps) {
             </div>
           ) : (
             <button
-              className="w-full py-3.5 rounded-2xl font-bold text-base transition-all active:scale-98 disabled:opacity-60"
+              className="w-full py-3.5 rounded-2xl font-bold text-base transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
                 background: `linear-gradient(135deg, ${level.theme.primaryColor}, ${level.theme.secondaryColor})`,
                 boxShadow: `0 4px 20px ${level.theme.primaryColor}40`,
                 color: "#fff",
               }}
-              disabled
-              title="Missions unlock in Phase 3"
+              onClick={() => { onClose(); router.push(getSubjectRoute(level, profileId)); }}
             >
               {isCompleted ? "⭐ Play Again" : pct > 0 ? "Continue Adventure" : "Begin Adventure"}
               {" "}{level.theme.emoji}
             </button>
           )}
-
-          <p className="text-center text-xs text-gray-600 mt-3">
-            {isLocked
-              ? ""
-              : "Full missions unlocking soon — adventure awaits!"}
-          </p>
         </div>
       </motion.div>
     </div>

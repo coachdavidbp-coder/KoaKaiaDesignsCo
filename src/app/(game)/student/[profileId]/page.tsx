@@ -113,7 +113,7 @@ export default function StudentGamePage({ params }: Props) {
               </span>
             </div>
           </div>
-          <WorldMap progress={progress} />
+          <WorldMap progress={progress} profileId={profileId} />
         </motion.div>
 
         <motion.div
