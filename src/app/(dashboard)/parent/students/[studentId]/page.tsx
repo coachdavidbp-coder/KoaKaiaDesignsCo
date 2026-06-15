@@ -111,7 +111,7 @@ export default function StudentReportPage({ params }: Props) {
         <Card variant="glow" className="p-5">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" />
+              <Avatar character={student.avatar.character} color={student.avatar.color} size="xl" avatarUrl={student.avatarUrl} />
               <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center">
                 <span className="text-xs font-bold text-white">{explorerLevel}</span>
               </div>

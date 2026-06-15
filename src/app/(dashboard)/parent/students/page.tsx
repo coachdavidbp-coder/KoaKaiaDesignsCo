@@ -92,7 +92,7 @@ export default function StudentSelectPage() {
                 className="flex flex-col items-center gap-3 p-6 rounded-3xl border border-white/10 bg-white/5 hover:border-blue-500/50 hover:bg-blue-500/10 transition-all group active:scale-95"
               >
                 <div className="group-hover:scale-110 transition-transform">
-                  <Avatar character={s.avatar.character} color={s.avatar.color} size="xl" />
+                  <Avatar character={s.avatar.character} color={s.avatar.color} size="xl" avatarUrl={s.avatarUrl} />
                 </div>
                 <p className="font-bold text-white text-center">{s.displayName}</p>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -125,7 +125,7 @@ export default function StudentSelectPage() {
         {pinTarget && (
           <div className="p-6 text-center">
             <div className="mb-4">
-              <Avatar character={pinTarget.avatar.character} color={pinTarget.avatar.color} size="xl" className="mx-auto mb-3" />
+              <Avatar character={pinTarget.avatar.character} color={pinTarget.avatar.color} size="xl" avatarUrl={pinTarget.avatarUrl} className="mx-auto mb-3" />
               <p className="text-lg font-bold text-white">{pinTarget.displayName}</p>
               <p className="text-sm text-gray-400">Enter your 4-digit PIN</p>
             </div>

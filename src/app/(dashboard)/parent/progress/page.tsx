@@ -83,7 +83,7 @@ export default function ProgressPage() {
                       : "border-white/10 bg-white/5 hover:border-white/20"
                   }`}
                 >
-                  <Avatar character={s.avatar.character} color={s.avatar.color} size="sm" />
+                  <Avatar character={s.avatar.character} color={s.avatar.color} size="sm" avatarUrl={s.avatarUrl} />
                   <div className="text-left min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{s.displayName}</p>
                     <p className="text-xs text-gray-500">{Math.round(p?.overallPercent ?? 0)}% complete</p>
