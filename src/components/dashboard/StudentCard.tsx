@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Play, MoreVertical, Clock, Zap } from "lucide-react";
+import { Play, MoreVertical, Clock, Zap, FileText } from "lucide-react";
 import { StudentProfile } from "@/types/user";
 import { StudentProgress } from "@/types/progress";
 import { Card } from "@/components/ui/Card";
@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 interface StudentCardProps {
   student: StudentProfile;
@@ -134,13 +135,21 @@ export function StudentCard({ student, progress, onPlay, onEdit, onDelete, index
             </span>
           </div>
 
-          <button
-            onClick={() => onPlay(student)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-sm font-semibold transition-all shadow-game-glow active:scale-95"
-          >
-            <Play className="w-4 h-4 fill-current" />
-            Play
-          </button>
+          <div className="flex items-center gap-2">
+            <Link href={`/parent/students/${student.id}`}>
+              <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-300 text-sm font-medium transition-all active:scale-95">
+                <FileText className="w-3.5 h-3.5" />
+                Report
+              </button>
+            </Link>
+            <button
+              onClick={() => onPlay(student)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-sm font-semibold transition-all shadow-game-glow active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              Play
+            </button>
+          </div>
         </div>
       </Card>
     </motion.div>
