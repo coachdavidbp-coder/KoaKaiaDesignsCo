@@ -54,6 +54,7 @@ export function StudentCard({ student, progress, onPlay, onEdit, onDelete, index
             character={student.avatar.character}
             color={student.avatar.color}
             size="lg"
+            avatarUrl={student.avatarUrl}
           />
 
           <div className="flex-1 min-w-0">
