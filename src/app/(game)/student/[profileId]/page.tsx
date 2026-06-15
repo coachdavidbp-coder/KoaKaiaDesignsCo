@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useStudentStore } from "@/store/studentStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useAdaptive } from "@/hooks/useAdaptive";
 import { getStudentProfile, getStudentProgress } from "@/lib/firebase/firestore";
 import { StudentProfile } from "@/types/user";
 import { StudentProgress } from "@/types/progress";
@@ -15,6 +16,9 @@ import { GameNav } from "@/components/game/GameNav";
 import { CompanionBubble } from "@/components/game/CompanionBubble";
 import { CrystalTracker } from "@/components/game/CrystalTracker";
 import { AchievementUnlock } from "@/components/game/AchievementUnlock";
+import { DailyQuestCard } from "@/components/adaptive/DailyQuestCard";
+import { LevelUpModal } from "@/components/adaptive/LevelUpModal";
+import { WorldUnlockBanner } from "@/components/adaptive/WorldUnlockBanner";
 import { Card } from "@/components/ui/Card";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 
@@ -31,6 +35,10 @@ export default function StudentGamePage({ params }: Props) {
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [progress, setLocalProgress] = useState<StudentProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUnlockBanner, setShowUnlockBanner] = useState(true);
+
+  const { recommendation, unlockedLevels, showLevelUp, newExplorerLevel, dismissLevelUp } =
+    useAdaptive(profileId, progress);
 
   useEffect(() => {
     async function load() {
@@ -69,6 +77,11 @@ export default function StudentGamePage({ params }: Props) {
     <div className="min-h-screen pb-20">
       <GameHUD student={student} progress={progress} />
       <AchievementUnlock studentId={profileId} />
+      <LevelUpModal
+        show={showLevelUp}
+        level={newExplorerLevel ?? 1}
+        onDismiss={dismissLevelUp}
+      />
 
       <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
         <motion.div
@@ -112,6 +125,27 @@ export default function StudentGamePage({ params }: Props) {
             <CrystalTracker progress={progress} />
           </Card>
         </motion.div>
+
+        {unlockedLevels.length > 0 && showUnlockBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <WorldUnlockBanner
+              levelIds={unlockedLevels}
+              onDismiss={() => setShowUnlockBanner(false)}
+            />
+          </motion.div>
+        )}
+
+        {recommendation && (
+          <DailyQuestCard
+            recommendation={recommendation}
+            streak={progress?.streak ?? 0}
+            delay={0.25}
+          />
+        )}
 
         <motion.div
           className="grid grid-cols-2 sm:grid-cols-4 gap-3"
