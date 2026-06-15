@@ -25,7 +25,8 @@ export async function createStudentProfile(
   displayName: string,
   avatarCharacter: AvatarCharacter,
   avatarColor: AvatarColor,
-  pin: string
+  pin: string,
+  avatarUrl?: string
 ): Promise<StudentProfile> {
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -36,6 +37,7 @@ export async function createStudentProfile(
     displayName,
     gradeLevel: 1,
     avatar: { character: avatarCharacter, color: avatarColor },
+    ...(avatarUrl ? { avatarUrl } : {}),
     pin,
     createdAt: now,
     updatedAt: now,
@@ -57,11 +59,10 @@ export async function getStudentProfiles(parentUid: string): Promise<StudentProf
   const q = query(
     collection(db, "students"),
     where("parentUid", "==", parentUid),
-    where("isActive", "==", true),
-    orderBy("createdAt", "asc")
+    where("isActive", "==", true)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+  const profiles = snap.docs.map((d) => {
     const data = d.data();
     return {
       ...data,
@@ -71,6 +72,7 @@ export async function getStudentProfiles(parentUid: string): Promise<StudentProf
       lastLoginAt: data.lastLoginAt ? toIso(data.lastLoginAt) : null,
     } as StudentProfile;
   });
+  return profiles.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function getStudentProfile(id: string): Promise<StudentProfile | null> {
