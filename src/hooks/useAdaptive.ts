@@ -92,7 +92,7 @@ export function useAdaptive(profileId: string, progress: StudentProgress | null)
     // Streak + overallPercent update
     updateStreakOnVisit(profileId, progress).then((streak) => {
       const overallPercent = Math.round(
-        (progress.readingPercent + progress.spellingPercent + progress.mathPercent + progress.writingPercent) / 4
+        (progress.readingPercent + progress.spellingPercent + progress.mathPercent + progress.writingPercent + (progress.vocabularyPercent ?? 0)) / 5
       );
       updateProgress(profileId, { streak, lastPlayedAt: new Date().toISOString(), overallPercent });
     }).catch(() => {});

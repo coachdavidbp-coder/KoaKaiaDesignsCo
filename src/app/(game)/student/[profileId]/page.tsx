@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useStudentStore } from "@/store/studentStore";
@@ -39,6 +39,19 @@ export default function StudentGamePage({ params }: Props) {
 
   const { recommendation, unlockedLevels, showLevelUp, newExplorerLevel, dismissLevelUp } =
     useAdaptive(profileId, progress);
+
+  // Sync newly unlocked levels into local progress so WorldMap updates without reload
+  const prevUnlockedRef = useRef<number[]>([]);
+  useEffect(() => {
+    if (unlockedLevels.length > 0 && unlockedLevels !== prevUnlockedRef.current) {
+      prevUnlockedRef.current = unlockedLevels;
+      setLocalProgress((prev) =>
+        prev
+          ? { ...prev, levels: prev.levels.map((l) => unlockedLevels.includes(l.levelId) ? { ...l, isUnlocked: true } : l) }
+          : prev
+      );
+    }
+  }, [unlockedLevels]);
 
   useEffect(() => {
     async function load() {

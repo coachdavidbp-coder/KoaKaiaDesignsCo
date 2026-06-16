@@ -116,7 +116,7 @@ export async function initializeStudentProgress(studentId: string): Promise<void
   const levels: LevelProgress[] = GAME_LEVELS.map((l) => ({
     levelId: l.id,
     levelName: l.name,
-    isUnlocked: l.id === 1,
+    isUnlocked: true,
     isCompleted: false,
     completionPercent: 0,
     missionsCompleted: 0,
