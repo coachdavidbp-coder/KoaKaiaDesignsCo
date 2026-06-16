@@ -38,8 +38,13 @@ export async function updateStreakOnVisit(
 // Level 5: 3 math + 2 reading + 2 spelling + 3 writing = 10
 const LEVEL_UNLOCK_THRESHOLD: Record<number, number> = { 1: 10, 3: 10, 5: 10 };
 
-// Maps educational content level → next level on the WorldMap to unlock
-const NEXT_WORLD_LEVEL: Record<number, number> = { 1: 3, 3: 5 };
+// Maps educational content level → WorldMap node IDs to unlock
+// Unlocks the intermediate node AND the content-gating node so the path is visually connected
+const NEXT_WORLD_LEVELS: Record<number, number[]> = {
+  1: [2, 3],  // Ed level 1 done → unlock WM nodes 2 + 3
+  3: [4, 5],  // Ed level 3 done → unlock WM nodes 4 + 5
+  5: [6],     // Ed level 5 done → unlock WM node 6
+};
 
 export async function checkAndUnlockLevels(
   studentId: string,
@@ -50,15 +55,19 @@ export async function checkAndUnlockLevels(
   const unlocked: number[] = [];
   const updatedLevels = levels.map((l) => ({ ...l }));
 
-  for (const [srcLevelStr, nextWorldLevel] of Object.entries(NEXT_WORLD_LEVEL)) {
+  for (const [srcLevelStr, nextWorldLevels] of Object.entries(NEXT_WORLD_LEVELS)) {
     const srcLevelId = Number(srcLevelStr);
     const completedCount = (completedLevelItems[srcLevelStr] ?? []).length;
     const threshold = LEVEL_UNLOCK_THRESHOLD[srcLevelId] ?? 10;
 
-    const nextLevel = updatedLevels.find((l) => l.levelId === nextWorldLevel);
-    if (nextLevel && !nextLevel.isUnlocked && completedCount >= threshold) {
-      nextLevel.isUnlocked = true;
-      unlocked.push(nextWorldLevel);
+    if (completedCount >= threshold) {
+      for (const nextWorldLevel of nextWorldLevels) {
+        const nextLevel = updatedLevels.find((l) => l.levelId === nextWorldLevel);
+        if (nextLevel && !nextLevel.isUnlocked) {
+          nextLevel.isUnlocked = true;
+          unlocked.push(nextWorldLevel);
+        }
+      }
     }
   }
 

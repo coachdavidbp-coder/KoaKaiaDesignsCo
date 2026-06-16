@@ -124,6 +124,11 @@ body {
   overscroll-behavior-y: contain;
 }
 
+/* Eliminate iOS 300ms tap delay on interactive elements */
+button, a, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
 /* Touch action for games */
 .game-canvas {
   touch-action: none;
