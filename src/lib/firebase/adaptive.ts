@@ -42,16 +42,26 @@ export async function checkAndUnlockLevels(
   const unlocked: number[] = [];
   const updatedLevels = levels.map((l) => ({ ...l }));
 
+  const level1 = updatedLevels.find((l) => l.levelId === 1);
   const level3 = updatedLevels.find((l) => l.levelId === 3);
-  if (level3 && !level3.isUnlocked && sum >= 20) {
-    level3.isUnlocked = true;
-    unlocked.push(3);
+  const level5 = updatedLevels.find((l) => l.levelId === 5);
+
+  // Level 3 unlocks when Level 1 is completed (2/2 missions) OR enough overall progress
+  if (level3 && !level3.isUnlocked) {
+    const level1Done = level1 && level1.missionsCompleted >= level1.missionsTotal && level1.missionsTotal > 0;
+    if (level1Done || sum >= 5) {
+      level3.isUnlocked = true;
+      unlocked.push(3);
+    }
   }
 
-  const level5 = updatedLevels.find((l) => l.levelId === 5);
-  if (level5 && !level5.isUnlocked && sum >= 60) {
-    level5.isUnlocked = true;
-    unlocked.push(5);
+  // Level 5 unlocks when Level 3 is completed OR enough overall progress
+  if (level5 && !level5.isUnlocked) {
+    const level3Done = level3 && level3.missionsCompleted >= level3.missionsTotal && level3.missionsTotal > 0;
+    if (level3Done || sum >= 20) {
+      level5.isUnlocked = true;
+      unlocked.push(5);
+    }
   }
 
   if (unlocked.length > 0) {

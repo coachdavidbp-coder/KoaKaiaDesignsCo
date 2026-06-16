@@ -8,6 +8,7 @@ import { useStudentStore } from "@/store/studentStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useMath } from "@/hooks/useMath";
 import { getStudentProfile, getStudentProgress } from "@/lib/firebase/firestore";
+import { checkAndUnlockLevels } from "@/lib/firebase/adaptive";
 import { ALL_MATH_MISSIONS } from "@/data/math";
 import { StudentProfile } from "@/types/user";
 import { StudentProgress } from "@/types/progress";
@@ -45,8 +46,18 @@ export default function MathHubPage({ params }: Props) {
         }
         const p = await getStudentProgress(profileId);
         setStudent(s);
-        setLocalProgress(p);
-        if (p) setProgress(profileId, p);
+        if (p) {
+          // Check/unlock levels each time math page loads
+          const newly = await checkAndUnlockLevels(profileId, p);
+          if (newly.length > 0) {
+            const updated = { ...p, levels: p.levels.map((l) => newly.includes(l.levelId) ? { ...l, isUnlocked: true } : l) };
+            setLocalProgress(updated);
+            setProgress(profileId, updated);
+          } else {
+            setLocalProgress(p);
+            setProgress(profileId, p);
+          }
+        }
         await loadMathProgress();
       } catch {
         router.push("/parent");
