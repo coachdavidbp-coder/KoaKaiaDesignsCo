@@ -59,11 +59,10 @@ export async function getStudentProfiles(parentUid: string): Promise<StudentProf
   const q = query(
     collection(db, "students"),
     where("parentUid", "==", parentUid),
-    where("isActive", "==", true),
-    orderBy("createdAt", "asc")
+    where("isActive", "==", true)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+  const profiles = snap.docs.map((d) => {
     const data = d.data();
     return {
       ...data,
@@ -73,6 +72,7 @@ export async function getStudentProfiles(parentUid: string): Promise<StudentProf
       lastLoginAt: data.lastLoginAt ? toIso(data.lastLoginAt) : null,
     } as StudentProfile;
   });
+  return profiles.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function getStudentProfile(id: string): Promise<StudentProfile | null> {

@@ -42,8 +42,6 @@ export default function SpellingSessionPage({ params }: Props) {
   const [sessionXP, setSessionXP] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [showExit, setShowExit] = useState(false);
-  const checkpointKey = `ck_spell_${profileId}_${setId}`;
-  const restored = useRef(false);
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -55,46 +53,14 @@ export default function SpellingSessionPage({ params }: Props) {
     loadSpellingProgress().then(() => setIsReady(true));
   }, [profileId, setId, activeStudent, router, loadSpellingProgress]);
 
-  // Save checkpoint on word advance
-  useEffect(() => {
-    if (!isReady || phase !== "playing") return;
-    try {
-      localStorage.setItem(checkpointKey, JSON.stringify({ idx: currentWordIdx, res: results, mode }));
-    } catch {}
-  }, [currentWordIdx, results, mode, phase, isReady, checkpointKey]);
-
-  // Clear checkpoint on completion
-  useEffect(() => {
-    if (phase === "complete") localStorage.removeItem(checkpointKey);
-  }, [phase, checkpointKey]);
-
   const startSession = useCallback((selectedMode: SpellingMode) => {
     if (!spellingSet) return;
-    // Check for checkpoint only if mode matches
-    if (!restored.current) {
-      restored.current = true;
-      try {
-        const saved = localStorage.getItem(checkpointKey);
-        if (saved) {
-          const { idx, res, mode: savedMode } = JSON.parse(saved);
-          if (savedMode === selectedMode && typeof idx === "number" && idx > 0 && Array.isArray(res)) {
-            setMode(selectedMode);
-            setWordQueue([...spellingSet.words]);
-            setCurrentWordIdx(idx);
-            setResults(res);
-            setPhase("playing");
-            return;
-          }
-        }
-      } catch {}
-    }
-    localStorage.removeItem(checkpointKey);
     setMode(selectedMode);
     setWordQueue([...spellingSet.words]);
     setCurrentWordIdx(0);
     setResults([]);
     setPhase("playing");
-  }, [spellingSet, checkpointKey]);
+  }, [spellingSet]);
 
   const handleWordResult = useCallback(
     async (correct: boolean, attempts: number) => {
@@ -105,7 +71,7 @@ export default function SpellingSessionPage({ params }: Props) {
       setResults(newResults);
 
       if (currentWordIdx + 1 >= wordQueue.length) {
-        const data = await finishSession(setId, newResults, spellingSet.xpReward, spellingSet.coinReward);
+        const data = await finishSession(setId, newResults, spellingSet.xpReward, spellingSet.coinReward, spellingSet.crystalReward);
         setSessionScore(data?.score ?? 0);
         setSessionXP(data?.xpEarned ?? spellingSet.xpReward);
         setPhase("complete");
@@ -139,12 +105,10 @@ export default function SpellingSessionPage({ params }: Props) {
   }, [spellingSet, wordQueue, currentWordIdx, results, handleWordResult]);
 
   const handlePlayAgain = useCallback(() => {
-    localStorage.removeItem(checkpointKey);
-    restored.current = false;
     setPhase("mode_select");
     setResults([]);
     setCurrentWordIdx(0);
-  }, [checkpointKey]);
+  }, []);
 
   if (!isReady || !spellingSet) return <FullPageLoader label="Loading word set..." />;
 

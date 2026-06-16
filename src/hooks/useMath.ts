@@ -32,7 +32,8 @@ export function useMath(studentId?: string) {
       missionId: string,
       results: MathProblemResult[],
       xpReward: number,
-      coinReward: number
+      coinReward: number,
+      crystalReward: number = 0
     ) => {
       if (!studentId || !mathProgress) return { score: 0, xpEarned: 0 };
 
@@ -49,18 +50,32 @@ export function useMath(studentId?: string) {
       const prevCoins = gameProgress?.coins ?? 0;
       const prevMath = gameProgress?.mathPercent ?? 0;
       const mathBoost = Math.min(4, score / 25);
+      const newMath = Math.min(100, prevMath + mathBoost);
+
+      const prevReading = gameProgress?.readingPercent ?? 0;
+      const prevSpelling = gameProgress?.spellingPercent ?? 0;
+      const prevWriting = gameProgress?.writingPercent ?? 0;
+      const prevVocab = gameProgress?.vocabularyPercent ?? 0;
+      const newOverall = Math.round((newMath + prevReading + prevSpelling + prevWriting + prevVocab) / 5);
+
+      const prevCrystals = gameProgress?.crystals?.earned ?? 0;
+      const newCrystalsEarned = prevCrystals + crystalReward;
 
       try {
         await updateStudentProgress(studentId, {
           xp: prevXP + xpBonus,
           coins: prevCoins + coinReward,
-          mathPercent: Math.min(100, prevMath + mathBoost),
+          mathPercent: newMath,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
           lastPlayedAt: new Date().toISOString(),
         });
         updateProgress(studentId, {
           xp: prevXP + xpBonus,
           coins: prevCoins + coinReward,
-          mathPercent: Math.min(100, prevMath + mathBoost),
+          mathPercent: newMath,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
         });
       } catch {
         console.error("Failed to update game progress");

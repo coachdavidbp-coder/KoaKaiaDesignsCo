@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Camera } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useAchievements } from "@/hooks/useAchievements";
-import { getStudentProgress } from "@/lib/firebase/firestore";
-import { uploadStudentPhoto } from "@/lib/firebase/storage";
+import { getStudentProgress, updateStudentProfile } from "@/lib/firebase/firestore";
+import { resizeToDataUrl } from "@/lib/utils/imageResize";
 import { COMPANIONS } from "@/types/companion";
 import { ALL_ACHIEVEMENTS, RARITY_COLORS } from "@/types/achievements";
 import { GameNav } from "@/components/game/GameNav";
@@ -18,6 +18,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { StudentProgress } from "@/types/progress";
+import toast from "react-hot-toast";
 
 interface Props {
   params: { profileId: string };
@@ -51,7 +52,7 @@ function getRank(level: number) {
 export default function CharacterPage({ params }: Props) {
   const { profileId } = params;
   const router = useRouter();
-  const { activeStudent } = useStudentStore();
+  const { activeStudent, updateStudent } = useStudentStore();
   const { progressMap, setProgress } = useProgressStore();
   const { earned, earnedIds, earnedCount, loadAchievements } = useAchievements(profileId);
   const [progress, setLocalProgress] = useState<StudentProgress | null>(
@@ -59,7 +60,6 @@ export default function CharacterPage({ params }: Props) {
   );
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { updateStudent } = useStudentStore();
 
   useEffect(() => {
     if (!activeStudent || activeStudent.id !== profileId) {
@@ -74,20 +74,22 @@ export default function CharacterPage({ params }: Props) {
     ]);
   }, [profileId, activeStudent, router, setProgress, loadAchievements]);
 
-  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeStudent) return;
+    if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadStudentPhoto(activeStudent.id, file);
-      updateStudent(activeStudent.id, { avatarUrl: url });
+      const dataUrl = await resizeToDataUrl(file, 300, 0.8);
+      await updateStudentProfile(profileId, { avatarUrl: dataUrl });
+      updateStudent(profileId, { avatarUrl: dataUrl });
+      toast.success("Photo updated!");
     } catch {
-      // upload failed silently
+      toast.error("Failed to upload photo");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }
+  };
 
   if (!activeStudent) return null;
   const companion = COMPANIONS[activeStudent.avatar.character];
@@ -118,84 +120,49 @@ export default function CharacterPage({ params }: Props) {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card variant="glow" className="p-6">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoSelect}
-            />
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <Avatar
+                  character={activeStudent.avatar.character}
+                  color={activeStudent.avatar.color}
+                  size="xl"
+                  avatarUrl={activeStudent.avatarUrl}
+                />
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">{explorerLevel}</span>
+                </div>
+              </div>
 
-            {activeStudent.avatarUrl ? (
-              /* Large centered photo layout */
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="relative">
-                  <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-blue-500/40 shadow-2xl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={activeStudent.avatarUrl}
-                      alt={activeStudent.displayName}
-                      className="w-full h-full object-cover"
-                    />
+              <div className="text-center">
+                <p className="text-xl font-bold text-white">{activeStudent.displayName} {rank.emoji}</p>
+                <p className="text-sm text-gray-400 mb-3">{rank.title} • Level {explorerLevel}</p>
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-500">XP to next level</span>
+                    <span className="text-blue-300 font-medium">
+                      {xpProgress}/{XP_PER_LEVEL}
+                    </span>
                   </div>
-                  <div className="absolute -top-1 -right-1 w-9 h-9 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center shadow-lg">
-                    <span className="text-sm font-bold text-white">{explorerLevel}</span>
-                  </div>
-                </div>
-                <div className="w-full">
-                  <p className="text-2xl font-bold text-white">{activeStudent.displayName} {rank.emoji}</p>
-                  <p className="text-sm text-gray-400 mb-3">{rank.title} • Level {explorerLevel}</p>
-                  <div className="max-w-xs mx-auto mb-4">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">XP to next level</span>
-                      <span className="text-blue-300 font-medium">{xpProgress}/{XP_PER_LEVEL}</span>
-                    </div>
-                    <ProgressBar value={xpProgress} max={XP_PER_LEVEL} variant="blue" size="sm" />
-                  </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/15 text-gray-300 text-sm font-medium hover:bg-white/15 hover:text-white transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <Camera className="w-4 h-4" />
-                    {uploading ? "Uploading…" : "Change Photo"}
-                  </button>
+                  <ProgressBar value={xpProgress} max={XP_PER_LEVEL} variant="blue" size="sm" />
                 </div>
               </div>
-            ) : (
-              /* Emoji avatar + prominent upload button */
-              <div className="flex flex-col items-center gap-5">
-                <div className="relative">
-                  <Avatar
-                    character={activeStudent.avatar.character}
-                    color={activeStudent.avatar.color}
-                    size="xl"
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue-600 border-2 border-gray-900 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{explorerLevel}</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold text-white">{activeStudent.displayName} {rank.emoji}</p>
-                  <p className="text-sm text-gray-400 mb-3">{rank.title} • Level {explorerLevel}</p>
-                  <div className="max-w-xs mx-auto mb-4">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">XP to next level</span>
-                      <span className="text-blue-300 font-medium">{xpProgress}/{XP_PER_LEVEL}</span>
-                    </div>
-                    <ProgressBar value={xpProgress} max={XP_PER_LEVEL} variant="blue" size="sm" />
-                  </div>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-300 text-sm font-semibold hover:bg-blue-600/30 hover:text-blue-200 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <Camera className="w-4 h-4" />
-                    {uploading ? "Uploading…" : "📷 Upload Photo"}
-                  </button>
-                </div>
-              </div>
-            )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 text-sm font-medium transition-all disabled:opacity-50"
+              >
+                <Camera className="w-4 h-4" />
+                {uploading ? "Uploading..." : activeStudent.avatarUrl ? "Change Photo" : "📷 Upload Photo"}
+              </button>
+            </div>
           </Card>
         </motion.div>
 
@@ -239,7 +206,7 @@ export default function CharacterPage({ params }: Props) {
                 <p className="text-xs text-gray-500 mb-0.5">Active Companion</p>
                 <p className="font-bold text-white">{companion.name}</p>
                 <p className="text-xs text-gray-400">{companion.specialty} Specialist</p>
-                <p className="text-xs mt-1 italic text-gray-500">"{companion.personality}"</p>
+                <p className="text-xs mt-1 italic text-gray-500">&quot;{companion.personality}&quot;</p>
               </div>
             </div>
           </Card>

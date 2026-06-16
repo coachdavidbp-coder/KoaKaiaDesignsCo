@@ -134,21 +134,35 @@ export function useReading(studentId?: string) {
       const newCoins = prevCoins + coinReward;
       const readingBoost = Math.min(5, score / 20);
       const vocabBoost = wordsLearnedThisSession.length * 0.5;
+      const newReading = Math.min(100, prevReading + readingBoost);
+      const newVocab = Math.min(100, prevVocab + vocabBoost);
+
+      const prevMath = gameProgress?.mathPercent ?? 0;
+      const prevSpelling = gameProgress?.spellingPercent ?? 0;
+      const prevWriting = gameProgress?.writingPercent ?? 0;
+      const newOverall = Math.round((newReading + prevMath + prevSpelling + prevWriting + newVocab) / 5);
+
+      const prevCrystals = gameProgress?.crystals?.earned ?? 0;
+      const newCrystalsEarned = prevCrystals + crystalReward;
 
       try {
         await updateStudentProgress(studentId, {
           xp: newXP,
           coins: newCoins,
-          readingPercent: Math.min(100, prevReading + readingBoost),
-          vocabularyPercent: Math.min(100, prevVocab + vocabBoost),
+          readingPercent: newReading,
+          vocabularyPercent: newVocab,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
           totalPlaytimeMinutes: (gameProgress?.totalPlaytimeMinutes ?? 0) + Math.ceil(timeSpent / 60),
           lastPlayedAt: new Date().toISOString(),
         });
         updateProgress(studentId, {
           xp: newXP,
           coins: newCoins,
-          readingPercent: Math.min(100, prevReading + readingBoost),
-          vocabularyPercent: Math.min(100, prevVocab + vocabBoost),
+          readingPercent: newReading,
+          vocabularyPercent: newVocab,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
         });
       } catch {
         console.error("Failed to update game progress");
