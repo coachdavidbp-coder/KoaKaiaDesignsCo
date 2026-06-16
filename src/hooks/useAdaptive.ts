@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useProgressStore } from "@/store/progressStore";
 import { updateStreakOnVisit, checkAndUnlockLevels } from "@/lib/firebase/adaptive";
+import { useSounds } from "@/hooks/useSounds";
 import { StudentProgress } from "@/types/progress";
 
 export interface SubjectRec {
@@ -71,6 +72,7 @@ function computeRecommendation(progress: StudentProgress, profileId: string): Su
 
 export function useAdaptive(profileId: string, progress: StudentProgress | null) {
   const { updateProgress } = useProgressStore();
+  const { playLevelUp, playCollect } = useSounds();
   const [unlockedLevels, setUnlockedLevels] = useState<number[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newExplorerLevel, setNewExplorerLevel] = useState<number | null>(null);
@@ -86,6 +88,7 @@ export function useAdaptive(profileId: string, progress: StudentProgress | null)
     if (lastLevel > 0 && currentLevel > lastLevel) {
       setNewExplorerLevel(currentLevel);
       setShowLevelUp(true);
+      playLevelUp();
     }
     localStorage.setItem(LEVEL_KEY(profileId), String(currentLevel));
 
@@ -105,9 +108,10 @@ export function useAdaptive(profileId: string, progress: StudentProgress | null)
           newly.includes(l.levelId) ? { ...l, isUnlocked: true } : l
         );
         updateProgress(profileId, { levels: updatedLevels });
+        playLevelUp();
       }
     }).catch(() => {});
-  }, [profileId, progress, updateProgress]);
+  }, [profileId, progress, updateProgress, playLevelUp]);
 
   const recommendation = progress ? computeRecommendation(progress, profileId) : null;
 

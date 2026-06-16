@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
 import { useWriting } from "@/hooks/useWriting";
+import { useSounds } from "@/hooks/useSounds";
 import { getWritingSetById } from "@/data/writing";
 import {
   WritingSet,
@@ -33,6 +34,7 @@ export default function WritingSessionPage({ params }: Props) {
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { writingProgress, loadWritingProgress, finishSet, submitStory } = useWriting(profileId);
+  const { playCorrect, playWrong, playComplete } = useSounds();
 
   const [writingSet, setWritingSet] = useState<WritingSet | null>(null);
   const [phase, setPhase] = useState<SessionPhase>("playing");
@@ -61,17 +63,20 @@ export default function WritingSessionPage({ params }: Props) {
       const newResults = [...results, newResult];
       setResults(newResults);
 
+      if (correct) playCorrect(); else playWrong();
+
       // Story starters only have one activity and are handled differently
       if (activityIdx + 1 >= writingSet.activities.length || writingSet.activityType === "word_sort") {
         const score = await finishSet(setId, newResults, writingSet.xpReward, writingSet.coinReward, writingSet.crystalReward);
         setSessionScore(score ?? 0);
         setSessionXP(writingSet.xpReward);
+        playComplete();
         setPhase("complete");
       } else {
         setActivityIdx((i) => i + 1);
       }
     },
-    [writingSet, activityIdx, results, finishSet, setId]
+    [writingSet, activityIdx, results, finishSet, setId, playCorrect, playWrong, playComplete]
   );
 
   const handleStorySubmit = useCallback(

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, BookOpen, PenLine, Shuffle } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
 import { useSpelling } from "@/hooks/useSpelling";
+import { useSounds } from "@/hooks/useSounds";
 import { getSpellingSetById } from "@/data/spelling";
 import { SpellingSet, SpellingMode, SessionWordResult } from "@/types/spelling";
 import { StudyCard } from "@/components/spelling/StudyCard";
@@ -31,6 +32,7 @@ export default function SpellingSessionPage({ params }: Props) {
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { spellingProgress, loadSpellingProgress, finishSession } = useSpelling(profileId);
+  const { playCorrect, playWrong, playComplete } = useSounds();
 
   const [spellingSet, setSpellingSet] = useState<SpellingSet | null>(null);
   const [phase, setPhase] = useState<SessionPhase>("mode_select");
@@ -70,16 +72,19 @@ export default function SpellingSessionPage({ params }: Props) {
       const newResults = [...results, newResult];
       setResults(newResults);
 
+      if (correct) playCorrect(); else playWrong();
+
       if (currentWordIdx + 1 >= wordQueue.length) {
         const data = await finishSession(setId, newResults, spellingSet.xpReward, spellingSet.coinReward, spellingSet.crystalReward);
         setSessionScore(data?.score ?? 0);
         setSessionXP(data?.xpEarned ?? spellingSet.xpReward);
+        playComplete();
         setPhase("complete");
       } else {
         setCurrentWordIdx((i) => i + 1);
       }
     },
-    [spellingSet, wordQueue, currentWordIdx, results, finishSession, setId]
+    [spellingSet, wordQueue, currentWordIdx, results, finishSession, setId, playCorrect, playWrong, playComplete]
   );
 
   // Study mode: "know it" = correct, "study more" = re-queue at end

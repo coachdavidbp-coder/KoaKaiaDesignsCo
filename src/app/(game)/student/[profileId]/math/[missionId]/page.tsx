@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useStudentStore } from "@/store/studentStore";
 import { useMath } from "@/hooks/useMath";
+import { useSounds } from "@/hooks/useSounds";
 import { getMathMissionById } from "@/data/math";
 import { MathMission, MathProblemResult } from "@/types/math";
 import { MathProblemCard } from "@/components/math/MathProblemCard";
@@ -23,6 +24,7 @@ export default function MathSessionPage({ params }: Props) {
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { finishMission } = useMath(profileId);
+  const { playCorrect, playWrong, playComplete } = useSounds();
 
   const [mission, setMission] = useState<MathMission | null>(null);
   const [phase, setPhase] = useState<SessionPhase>("playing");
@@ -47,6 +49,8 @@ export default function MathSessionPage({ params }: Props) {
     async (correct: boolean, attempts: number) => {
       if (!mission) return;
       const problem = mission.problems[problemIdx];
+      if (correct) playCorrect(); else playWrong();
+
       const newResult: MathProblemResult = { problemId: problem.id, correct, attempts };
       const newResults = [...results, newResult];
       setResults(newResults);
@@ -55,12 +59,13 @@ export default function MathSessionPage({ params }: Props) {
         const { score, xpEarned } = await finishMission(missionId, newResults, mission.xpReward, mission.coinReward, mission.crystalReward);
         setSessionScore(score);
         setSessionXP(xpEarned);
+        playComplete();
         setPhase("complete");
       } else {
         setProblemIdx((i) => i + 1);
       }
     },
-    [mission, problemIdx, results, finishMission, missionId]
+    [mission, problemIdx, results, finishMission, missionId, playCorrect, playWrong, playComplete]
   );
 
   const handlePlayAgain = useCallback(() => {
