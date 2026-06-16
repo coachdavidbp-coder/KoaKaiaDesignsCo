@@ -21,9 +21,9 @@ interface Props {
 }
 
 const LEVEL_GROUPS = [
-  { levelId: 1, label: "Crystal Cove — Level 1", emoji: "🏝️", color: "#10B981" },
-  { levelId: 3, label: "Thunder Peak — Level 3", emoji: "⚡", color: "#F59E0B" },
-  { levelId: 5, label: "Ocean Deep — Level 5", emoji: "🌊", color: "#3B82F6" },
+  { levelId: 1, label: "Level 1 · Crystal Cove", emoji: "🏝️", color: "#10B981" },
+  { levelId: 3, label: "Level 2 · Thunder Peak", emoji: "⚡", color: "#F59E0B" },
+  { levelId: 5, label: "Level 3 · Ocean Deep", emoji: "🌊", color: "#3B82F6" },
 ];
 
 export default function MathHubPage({ params }: Props) {
@@ -47,18 +47,24 @@ export default function MathHubPage({ params }: Props) {
         const p = await getStudentProgress(profileId);
         setStudent(s);
         if (p) {
-          // Check/unlock levels each time math page loads
-          const newly = await checkAndUnlockLevels(profileId, p);
+          setLocalProgress(p);
+          setProgress(profileId, p);
+          await loadMathProgress(p);
+          // Re-read after migration may have updated completedLevelItems
+          const freshP = await getStudentProgress(profileId);
+          const target = freshP ?? p;
+          const newly = await checkAndUnlockLevels(profileId, target);
           if (newly.length > 0) {
-            const updated = { ...p, levels: p.levels.map((l) => newly.includes(l.levelId) ? { ...l, isUnlocked: true } : l) };
+            const updated = { ...target, levels: target.levels.map((l) => newly.includes(l.levelId) ? { ...l, isUnlocked: true } : l) };
             setLocalProgress(updated);
             setProgress(profileId, updated);
           } else {
-            setLocalProgress(p);
-            setProgress(profileId, p);
+            setLocalProgress(target);
+            setProgress(profileId, target);
           }
+        } else {
+          await loadMathProgress();
         }
-        await loadMathProgress();
       } catch {
         router.push("/parent");
       } finally {

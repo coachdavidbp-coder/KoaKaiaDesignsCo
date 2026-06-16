@@ -47,6 +47,9 @@ export interface StudentProgress {
   lastPlayedAt: string | null;
   totalPlaytimeMinutes: number;
   updatedAt: string;
+  // Tracks completed item IDs per educational level (key = String(levelId))
+  // Used for sequential level unlock: need 10 items per level to unlock the next
+  completedLevelItems?: Record<string, string[]>;
 }
 
 export interface MissedItem {

@@ -22,9 +22,9 @@ interface Props {
 }
 
 const LEVEL_LABELS: Record<number, { label: string; emoji: string; color: string }> = {
-  1: { label: "Crystal Cove — Level 1", emoji: "🏝️", color: "#10B981" },
-  3: { label: "Thunder Peak — Level 3", emoji: "⚡", color: "#F59E0B" },
-  5: { label: "Ocean Deep — Level 5", emoji: "🌊", color: "#3B82F6" },
+  1: { label: "Level 1 · Crystal Cove", emoji: "🏝️", color: "#10B981" },
+  3: { label: "Level 2 · Thunder Peak", emoji: "⚡", color: "#F59E0B" },
+  5: { label: "Level 3 · Ocean Deep", emoji: "🌊", color: "#3B82F6" },
 };
 
 export default function ReadingLibraryPage({ params }: Props) {
@@ -53,7 +53,7 @@ export default function ReadingLibraryPage({ params }: Props) {
         setLocalProgress(p);
         if (p) setProgress(profileId, p);
 
-        await loadReadingProgress();
+        await loadReadingProgress(p ?? undefined);
       } catch {
         router.push("/parent");
       } finally {

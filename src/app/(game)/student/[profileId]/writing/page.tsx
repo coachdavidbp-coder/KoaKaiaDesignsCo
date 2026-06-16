@@ -21,9 +21,9 @@ interface Props {
 }
 
 const LEVEL_GROUPS = [
-  { levelId: 1, label: "Crystal Cove — Level 1", emoji: "🏝️", color: "#10B981" },
-  { levelId: 3, label: "Thunder Peak — Level 3", emoji: "⚡", color: "#F59E0B" },
-  { levelId: 5, label: "Ocean Deep — Level 5", emoji: "🌊", color: "#3B82F6" },
+  { levelId: 1, label: "Level 1 · Crystal Cove", emoji: "🏝️", color: "#10B981" },
+  { levelId: 3, label: "Level 2 · Thunder Peak", emoji: "⚡", color: "#F59E0B" },
+  { levelId: 5, label: "Level 3 · Ocean Deep", emoji: "🌊", color: "#3B82F6" },
 ];
 
 const ACTIVITY_TYPE_META: Record<WritingActivityType, { icon: typeof PenLine; label: string }> = {
@@ -55,7 +55,7 @@ export default function WritingHubPage({ params }: Props) {
         setStudent(s);
         setLocalProgress(p);
         if (p) setProgress(profileId, p);
-        await loadWritingProgress();
+        await loadWritingProgress(p ?? undefined);
       } catch {
         router.push("/parent");
       } finally {

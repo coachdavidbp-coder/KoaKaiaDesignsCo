@@ -13,8 +13,10 @@ import {
   updateReadingStats,
 } from "@/lib/firebase/reading";
 import { updateStudentProgress } from "@/lib/firebase/firestore";
+import { getStoryById } from "@/data/stories";
 import { VocabWord } from "@/types/reading";
-import toast from "react-hot-toast";
+import { StudentProgress } from "@/types/progress";
+
 
 export function useReading(studentId?: string) {
   const {
@@ -39,16 +41,40 @@ export function useReading(studentId?: string) {
   const readingProgress = studentId ? progressMap[studentId] : undefined;
   const gameProgress = studentId ? gameProgressMap[studentId] : undefined;
 
-  const loadReadingProgress = useCallback(async () => {
+  const loadReadingProgress = useCallback(async (studentProgress?: StudentProgress) => {
     if (!studentId) return;
     const p = await getReadingProgress(studentId);
-    if (p) {
-      setProgress(studentId, p);
-    } else {
-      const init = await initReadingProgress(studentId);
-      setProgress(studentId, init);
+    const readingProg = p ?? await initReadingProgress(studentId);
+    setProgress(studentId, readingProg);
+
+    // One-time migration: sync already-read stories to completedLevelItems
+    if (studentProgress && (readingProg.storiesRead?.length ?? 0) > 0) {
+      const migrateKey = `reading_lvl_sync_${studentId}`;
+      if (!localStorage.getItem(migrateKey)) {
+        try {
+          const currentItems = studentProgress.completedLevelItems ?? {};
+          const newItems: Record<string, string[]> = { ...currentItems };
+          let changed = false;
+
+          for (const storyId of (readingProg.storiesRead ?? [])) {
+            const story = getStoryById(storyId);
+            if (!story) continue;
+            const key = String(story.levelId);
+            if (!(newItems[key] ?? []).includes(storyId)) {
+              newItems[key] = [...(newItems[key] ?? []), storyId];
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            await updateStudentProgress(studentId, { completedLevelItems: newItems });
+            updateProgress(studentId, { completedLevelItems: newItems });
+          }
+        } catch { /* migration errors are non-fatal */ }
+        localStorage.setItem(migrateKey, "1");
+      }
     }
-  }, [studentId, setProgress]);
+  }, [studentId, setProgress, updateProgress]);
 
   const beginStory = useCallback(
     async (storyId: string) => {
@@ -145,6 +171,19 @@ export function useReading(studentId?: string) {
       const prevCrystals = gameProgress?.crystals?.earned ?? 0;
       const newCrystalsEarned = prevCrystals + crystalReward;
 
+      // Track level item on first completion
+      const isFirstCompletion = !readingProgress?.storiesRead?.includes(storyId);
+      const story = getStoryById(storyId);
+      const prevItems = gameProgress?.completedLevelItems ?? {};
+      let newLevelItems = prevItems;
+      if (isFirstCompletion && story) {
+        const key = String(story.levelId);
+        const existing = prevItems[key] ?? [];
+        if (!existing.includes(storyId)) {
+          newLevelItems = { ...prevItems, [key]: [...existing, storyId] };
+        }
+      }
+
       try {
         await updateStudentProgress(studentId, {
           xp: newXP,
@@ -155,6 +194,7 @@ export function useReading(studentId?: string) {
           crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
           totalPlaytimeMinutes: (gameProgress?.totalPlaytimeMinutes ?? 0) + Math.ceil(timeSpent / 60),
           lastPlayedAt: new Date().toISOString(),
+          ...(newLevelItems !== prevItems ? { completedLevelItems: newLevelItems } : {}),
         });
         updateProgress(studentId, {
           xp: newXP,
@@ -163,6 +203,7 @@ export function useReading(studentId?: string) {
           vocabularyPercent: newVocab,
           overallPercent: newOverall,
           crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
+          ...(newLevelItems !== prevItems ? { completedLevelItems: newLevelItems } : {}),
         });
       } catch {
         console.error("Failed to update game progress");

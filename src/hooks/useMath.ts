@@ -6,7 +6,9 @@ import { useProgressStore } from "@/store/progressStore";
 import { useAchievements } from "@/hooks/useAchievements";
 import { getMathProgress, initMathProgress, completeMathMission } from "@/lib/firebase/math";
 import { updateStudentProgress } from "@/lib/firebase/firestore";
+import { getMathMissionById } from "@/data/math";
 import { MathProblemResult } from "@/types/math";
+import { StudentProgress } from "@/types/progress";
 
 export function useMath(studentId?: string) {
   const { progressMap, setProgress, markMissionComplete } = useMathStore();
@@ -16,16 +18,40 @@ export function useMath(studentId?: string) {
   const mathProgress = studentId ? progressMap[studentId] : undefined;
   const gameProgress = studentId ? gameProgressMap[studentId] : undefined;
 
-  const loadMathProgress = useCallback(async () => {
+  const loadMathProgress = useCallback(async (studentProgress?: StudentProgress) => {
     if (!studentId) return;
     const p = await getMathProgress(studentId);
-    if (p) {
-      setProgress(studentId, p);
-    } else {
-      const init = await initMathProgress(studentId);
-      setProgress(studentId, init);
+    const mathProg = p ?? await initMathProgress(studentId);
+    setProgress(studentId, mathProg);
+
+    // One-time migration: sync already-completed math missions to completedLevelItems
+    if (studentProgress && mathProg.missionsCompleted.length > 0) {
+      const migrateKey = `math_lvl_sync_${studentId}`;
+      if (!localStorage.getItem(migrateKey)) {
+        try {
+          const currentItems = studentProgress.completedLevelItems ?? {};
+          const newItems: Record<string, string[]> = { ...currentItems };
+          let changed = false;
+
+          for (const missionId of mathProg.missionsCompleted) {
+            const mission = getMathMissionById(missionId);
+            if (!mission) continue;
+            const key = String(mission.levelId);
+            if (!(newItems[key] ?? []).includes(missionId)) {
+              newItems[key] = [...(newItems[key] ?? []), missionId];
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            await updateStudentProgress(studentId, { completedLevelItems: newItems });
+            updateProgress(studentId, { completedLevelItems: newItems });
+          }
+        } catch { /* migration errors are non-fatal */ }
+        localStorage.setItem(migrateKey, "1");
+      }
     }
-  }, [studentId, setProgress]);
+  }, [studentId, setProgress, updateProgress]);
 
   const finishMission = useCallback(
     async (
@@ -38,9 +64,8 @@ export function useMath(studentId?: string) {
       if (!studentId || !mathProgress) return { score: 0, xpEarned: 0 };
 
       const updated = await completeMathMission(studentId, missionId, results, mathProgress);
-      if (updated.missionsCompleted.includes(missionId) && !mathProgress.missionsCompleted.includes(missionId)) {
-        markMissionComplete(studentId, missionId);
-      }
+      const isFirstCompletion = updated.missionsCompleted.includes(missionId) && !mathProgress.missionsCompleted.includes(missionId);
+      if (isFirstCompletion) markMissionComplete(studentId, missionId);
 
       const correct = results.filter((r) => r.correct).length;
       const score = Math.round((correct / results.length) * 100);
@@ -61,6 +86,18 @@ export function useMath(studentId?: string) {
       const prevCrystals = gameProgress?.crystals?.earned ?? 0;
       const newCrystalsEarned = prevCrystals + crystalReward;
 
+      // Track this completion in completedLevelItems for level unlock
+      const mission = getMathMissionById(missionId);
+      const prevItems = gameProgress?.completedLevelItems ?? {};
+      let newLevelItems = prevItems;
+      if (isFirstCompletion && mission) {
+        const key = String(mission.levelId);
+        const existing = prevItems[key] ?? [];
+        if (!existing.includes(missionId)) {
+          newLevelItems = { ...prevItems, [key]: [...existing, missionId] };
+        }
+      }
+
       try {
         await updateStudentProgress(studentId, {
           xp: prevXP + xpBonus,
@@ -69,6 +106,7 @@ export function useMath(studentId?: string) {
           overallPercent: newOverall,
           crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
           lastPlayedAt: new Date().toISOString(),
+          ...(newLevelItems !== prevItems ? { completedLevelItems: newLevelItems } : {}),
         });
         updateProgress(studentId, {
           xp: prevXP + xpBonus,
@@ -76,6 +114,7 @@ export function useMath(studentId?: string) {
           mathPercent: newMath,
           overallPercent: newOverall,
           crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
+          ...(newLevelItems !== prevItems ? { completedLevelItems: newLevelItems } : {}),
         });
       } catch {
         console.error("Failed to update game progress");
