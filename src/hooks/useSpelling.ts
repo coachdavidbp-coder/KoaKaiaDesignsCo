@@ -36,7 +36,8 @@ export function useSpelling(studentId?: string) {
       setId: string,
       results: SessionWordResult[],
       xpReward: number,
-      coinReward: number
+      coinReward: number,
+      crystalReward: number = 0
     ) => {
       if (!studentId || !spellingProgress) return;
 
@@ -67,18 +68,32 @@ export function useSpelling(studentId?: string) {
       ).length;
       const totalWords = Object.keys(updated.wordMastery).length;
       const spellingBoost = Math.min(3, (masteredCount / Math.max(totalWords, 1)) * 5);
+      const newSpelling = Math.min(100, prevSpelling + spellingBoost);
+
+      const prevReading = gameProgress?.readingPercent ?? 0;
+      const prevMath = gameProgress?.mathPercent ?? 0;
+      const prevWriting = gameProgress?.writingPercent ?? 0;
+      const prevVocab = gameProgress?.vocabularyPercent ?? 0;
+      const newOverall = Math.round((newSpelling + prevReading + prevMath + prevWriting + prevVocab) / 5);
+
+      const prevCrystals = gameProgress?.crystals?.earned ?? 0;
+      const newCrystalsEarned = prevCrystals + crystalReward;
 
       try {
         await updateStudentProgress(studentId, {
           xp: prevXP + xpBonus,
           coins: prevCoins + coinReward,
-          spellingPercent: Math.min(100, prevSpelling + spellingBoost),
+          spellingPercent: newSpelling,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
           lastPlayedAt: new Date().toISOString(),
         });
         updateProgress(studentId, {
           xp: prevXP + xpBonus,
           coins: prevCoins + coinReward,
-          spellingPercent: Math.min(100, prevSpelling + spellingBoost),
+          spellingPercent: newSpelling,
+          overallPercent: newOverall,
+          crystals: { total: 100, earned: newCrystalsEarned, byLevel: gameProgress?.crystals?.byLevel ?? {} },
         });
       } catch {
         console.error("Failed to update game progress");

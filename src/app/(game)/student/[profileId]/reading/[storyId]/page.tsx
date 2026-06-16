@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -27,11 +27,11 @@ interface CompletionData {
 }
 
 interface Props {
-  params: Promise<{ profileId: string; storyId: string }>;
+  params: { profileId: string; storyId: string };
 }
 
 export default function StoryReaderPage({ params }: Props) {
-  const { profileId, storyId } = use(params);
+  const { profileId, storyId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Lock, CheckCircle } from "lucide-react";
@@ -17,7 +17,7 @@ import { GameNav } from "@/components/game/GameNav";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 const LEVEL_GROUPS: Array<{ levelId: number; label: string; emoji: string; color: string }> = [
@@ -27,7 +27,7 @@ const LEVEL_GROUPS: Array<{ levelId: number; label: string; emoji: string; color
 ];
 
 export default function SpellingHubPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { setProgress } = useProgressStore();

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ShoppingBag, Coins } from "lucide-react";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils/cn";
 import { StudentProgress } from "@/types/progress";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 const FILTERS: { id: ItemType | "all"; label: string; emoji: string }[] = [
@@ -36,7 +36,7 @@ const FILTERS: { id: ItemType | "all"; label: string; emoji: string }[] = [
 ];
 
 export default function ShopPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { progressMap, setProgress } = useProgressStore();

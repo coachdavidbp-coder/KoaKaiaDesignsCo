@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useStudentStore } from "@/store/studentStore";
@@ -23,11 +23,11 @@ import { Card } from "@/components/ui/Card";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 export default function StudentGamePage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent, setActiveStudent } = useStudentStore();
   const { setProgress } = useProgressStore();

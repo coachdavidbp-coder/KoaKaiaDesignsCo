@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Lock, CheckCircle, BookOpen, AlignLeft, ArrowUpDown, PenLine } from "lucide-react";
@@ -17,7 +17,7 @@ import { GameNav } from "@/components/game/GameNav";
 import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 
 interface Props {
-  params: Promise<{ profileId: string }>;
+  params: { profileId: string };
 }
 
 const LEVEL_GROUPS = [
@@ -34,7 +34,7 @@ const ACTIVITY_TYPE_META: Record<WritingActivityType, { icon: typeof PenLine; la
 };
 
 export default function WritingHubPage({ params }: Props) {
-  const { profileId } = use(params);
+  const { profileId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { setProgress } = useProgressStore();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, BookOpen, PenLine, Shuffle } from "lucide-react";
@@ -17,7 +17,7 @@ import { FullPageLoader } from "@/components/ui/LoadingSpinner";
 type SessionPhase = "mode_select" | "playing" | "complete";
 
 interface Props {
-  params: Promise<{ profileId: string; setId: string }>;
+  params: { profileId: string; setId: string };
 }
 
 const MODE_OPTIONS: Array<{ mode: SpellingMode; icon: typeof BookOpen; label: string; desc: string; color: string }> = [
@@ -27,7 +27,7 @@ const MODE_OPTIONS: Array<{ mode: SpellingMode; icon: typeof BookOpen; label: st
 ];
 
 export default function SpellingSessionPage({ params }: Props) {
-  const { profileId, setId } = use(params);
+  const { profileId, setId } = params;
   const router = useRouter();
   const { activeStudent } = useStudentStore();
   const { spellingProgress, loadSpellingProgress, finishSession } = useSpelling(profileId);
@@ -71,7 +71,7 @@ export default function SpellingSessionPage({ params }: Props) {
       setResults(newResults);
 
       if (currentWordIdx + 1 >= wordQueue.length) {
-        const data = await finishSession(setId, newResults, spellingSet.xpReward, spellingSet.coinReward);
+        const data = await finishSession(setId, newResults, spellingSet.xpReward, spellingSet.coinReward, spellingSet.crystalReward);
         setSessionScore(data?.score ?? 0);
         setSessionXP(data?.xpEarned ?? spellingSet.xpReward);
         setPhase("complete");
