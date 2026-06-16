@@ -182,7 +182,7 @@ export default function StudentGamePage({ params }: Props) {
         >
           {(() => {
             const subjectSum = (progress?.readingPercent ?? 0) + (progress?.spellingPercent ?? 0) + (progress?.mathPercent ?? 0) + (progress?.writingPercent ?? 0);
-            const bossUnlocked = subjectSum >= 40;
+            const bossUnlocked = subjectSum >= 100;
 
             return bossUnlocked ? (
               <button
@@ -211,10 +211,10 @@ export default function StudentGamePage({ params }: Props) {
                 <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (subjectSum / 40) * 100)}%`, background: "linear-gradient(90deg, #7C3AED, #A855F7)" }}
+                    style={{ width: `${Math.min(100, subjectSum)}%`, background: "linear-gradient(90deg, #7C3AED, #A855F7)" }}
                   />
                 </div>
-                <p className="text-xs text-purple-500 mt-1">{Math.round(Math.min(100, (subjectSum / 40) * 100))}% ready</p>
+                <p className="text-xs text-purple-500 mt-1">{Math.round(Math.min(100, subjectSum))}% ready</p>
               </Card>
             );
           })()}
