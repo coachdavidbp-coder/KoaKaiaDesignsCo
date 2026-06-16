@@ -58,20 +58,21 @@ export async function createStudentProfile(
 export async function getStudentProfiles(parentUid: string): Promise<StudentProfile[]> {
   const q = query(
     collection(db, "students"),
-    where("parentUid", "==", parentUid),
-    where("isActive", "==", true)
+    where("parentUid", "==", parentUid)
   );
   const snap = await getDocs(q);
-  const profiles = snap.docs.map((d) => {
-    const data = d.data();
-    return {
-      ...data,
-      id: d.id,
-      createdAt: toIso(data.createdAt),
-      updatedAt: toIso(data.updatedAt),
-      lastLoginAt: data.lastLoginAt ? toIso(data.lastLoginAt) : null,
-    } as StudentProfile;
-  });
+  const profiles = snap.docs
+    .map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        id: d.id,
+        createdAt: toIso(data.createdAt),
+        updatedAt: toIso(data.updatedAt),
+        lastLoginAt: data.lastLoginAt ? toIso(data.lastLoginAt) : null,
+      } as StudentProfile;
+    })
+    .filter((p) => p.isActive);
   return profiles.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
